@@ -7,6 +7,10 @@ import ContactForm from "./ContactForm";
 import Footer from "./Footer";
 
 const Home = () => {
+  React.useEffect(() => {
+    document.title = "99 Agents | AI Development Agency";
+  }, []);
+
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   const handleGetStarted = () => {

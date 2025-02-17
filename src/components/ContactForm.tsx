@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Check } from "lucide-react";
+import emailjs from "@emailjs/browser";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,8 +32,25 @@ interface ContactFormProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// Replace these with your actual EmailJS credentials
+const EMAILJS_SERVICE_ID =
+  import.meta.env.VITE_EMAILJS_SERVICE_ID || "YOUR_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID =
+  import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "YOUR_TEMPLATE_ID";
+const EMAILJS_PUBLIC_KEY =
+  import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "YOUR_PUBLIC_KEY";
+const ADMIN_EMAIL =
+  import.meta.env.VITE_ADMIN_EMAIL || "your-email@99agents.ai";
+
 const ContactForm = ({ open = true, onOpenChange }: ContactFormProps) => {
+  React.useEffect(() => {
+    if (open) {
+      document.title = "99 Agents | Contact Us";
+    }
+  }, [open]);
+
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -44,10 +62,60 @@ const ContactForm = ({ open = true, onOpenChange }: ContactFormProps) => {
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    // Handle form submission
-    console.log(data);
-    setIsSubmitted(true);
+  const sendEmail = async (data: FormData) => {
+    try {
+      // Send email to admin
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email: ADMIN_EMAIL,
+          from_name: data.name,
+          from_email: data.email,
+          phone: data.phone || "Not provided",
+          message: data.projectType,
+          reply_to: data.email,
+        },
+        EMAILJS_PUBLIC_KEY,
+      );
+
+      // Send confirmation email to user
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email: data.email,
+          from_name: "99 Agents",
+          message: `Thank you for reaching out! We've received your inquiry about:
+
+${data.projectType}
+
+We'll get back to you within 24 hours to discuss your AI project requirements.`,
+          reply_to: ADMIN_EMAIL,
+        },
+        EMAILJS_PUBLIC_KEY,
+      );
+
+      return true;
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      return false;
+    }
+  };
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      const success = await sendEmail(data);
+      if (success) {
+        setIsSubmitted(true);
+      } else {
+        // Handle error
+        alert("Failed to send message. Please try again later.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -61,7 +129,8 @@ const ContactForm = ({ open = true, onOpenChange }: ContactFormProps) => {
             <DialogTitle className="text-2xl font-bold">Thank You!</DialogTitle>
             <DialogDescription className="max-w-sm">
               We've received your message and will get back to you within 24
-              hours to discuss your AI project requirements.
+              hours to discuss your AI project requirements. We've sent you a
+              confirmation email as well.
             </DialogDescription>
             <Button
               onClick={() => {
@@ -153,9 +222,9 @@ const ContactForm = ({ open = true, onOpenChange }: ContactFormProps) => {
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-            disabled={form.formState.isSubmitting}
+            disabled={isSubmitting}
           >
-            {form.formState.isSubmitting ? "Sending..." : "Send Message"}
+            {isSubmitting ? "Sending..." : "Send Message"}
           </Button>
         </form>
       </DialogContent>
