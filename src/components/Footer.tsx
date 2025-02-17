@@ -20,10 +20,10 @@ interface FooterProps {
 const Footer = ({
   companyName = "99 Agents",
   socialLinks = [
-    { icon: Twitter, href: "#", label: "Twitter" },
-    { icon: Github, href: "#", label: "GitHub" },
+    { icon: Twitter, href: "https://x.com/99agentsAI", label: "Twitter" },
+    // { icon: Github, href: "#", label: "GitHub" },
     { icon: Linkedin, href: "#", label: "LinkedIn" },
-    { icon: Mail, href: "mailto:contact@99agents.ai", label: "Email" },
+    { icon: Mail, href: "mailto:oxdiablo.crypto@gmail.com", label: "Email" },
   ],
   links = [
     {
